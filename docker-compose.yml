@@ -1,0 +1,47 @@
+
+services:
+  web:
+    build: .
+    container_name: mock-django-web
+    command: gunicorn config.wsgi:application --bind 0.0.0.0:8000
+    expose:
+      - "8000"
+    environment:
+      - VIRTUAL_HOST=localhost
+      - POSTGRES_HOST=db
+      - POSTGRES_DB=mockdb
+      - POSTGRES_USER=mockuser
+      - POSTGRES_PASSWORD=mockpass
+    depends_on:
+      - db
+    networks:
+      - mock-network
+
+  db:
+    image: postgres:15-alpine
+    container_name: mock-django-db
+    environment:
+      POSTGRES_USER: mockuser
+      POSTGRES_PASSWORD: mockpass
+      POSTGRES_DB: mockdb
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - mock-network
+
+  nginx-proxy:
+    image: jwilder/nginx-proxy:alpine
+    container_name: mock-django-nginx-proxy
+    ports:
+      - "8080:80"
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+    networks:
+      - mock-network
+
+volumes:
+  postgres_data:
+
+networks:
+  mock-network:
+    driver: bridge
