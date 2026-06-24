@@ -4,6 +4,8 @@
 2. docker compose up -d --build
 3. Перейти в браузере на http://localhost:8080
 
+# Roadmap находится в docs/deployment
+
 ## env.example
 
 Шаблон файла переменных окружения.
