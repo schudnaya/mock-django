@@ -1,7 +1,3 @@
-# GitLab CI/CD pipeline for mock-django.
-# The file is intended for a GitLab mirror/import of the GitHub repository.
-# Required CI/CD variables are described in docs/deployment/gitlab-ci-variables.md.
-
 stages:
   - validate
   - test
