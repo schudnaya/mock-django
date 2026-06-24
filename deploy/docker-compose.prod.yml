@@ -1,0 +1,68 @@
+services:
+  web:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: cbs-mock-django-web
+    restart: unless-stopped
+    command: >
+      gunicorn config.wsgi:application
+      --bind 0.0.0.0:8000
+      --workers ${GUNICORN_WORKERS:-3}
+      --timeout 120
+    env_file:
+      - ../.env
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+    expose:
+      - "8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - static_volume:/app/app/staticfiles
+    networks:
+      - cbs-network
+
+  db:
+    image: postgres:15-alpine
+    container_name: cbs-mock-django-db
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-mockdb}
+      POSTGRES_USER: ${POSTGRES_USER:-mockuser}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-mockpass}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-mockuser} -d ${POSTGRES_DB:-mockdb}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - cbs-network
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: cbs-mock-django-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - static_volume:/static:ro
+    depends_on:
+      - web
+    networks:
+      - cbs-network
+
+volumes:
+  postgres_data:
+  static_volume:
+
+networks:
+  cbs-network:
+    driver: bridge

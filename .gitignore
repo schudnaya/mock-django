@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Django
+*.log
+db.sqlite3
+staticfiles/
+media/
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+
+# Deployment artifacts
+backups/
+*.sql
+*.dump
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store

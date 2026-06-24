@@ -1,0 +1,127 @@
+# GitLab CI/CD pipeline for mock-django.
+# The file is intended for a GitLab mirror/import of the GitHub repository.
+# Required CI/CD variables are described in docs/deployment/gitlab-ci-variables.md.
+
+stages:
+  - validate
+  - test
+  - build
+  - deploy
+
+variables:
+  PYTHONUNBUFFERED: "1"
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  POSTGRES_DB: "mockdb"
+  POSTGRES_USER: "mockuser"
+  POSTGRES_PASSWORD: "mockpass"
+  POSTGRES_HOST: "postgres"
+  POSTGRES_PORT: "5432"
+  DJANGO_SETTINGS_MODULE: "config.settings"
+
+cache:
+  paths:
+    - .cache/pip/
+
+python_check:
+  stage: validate
+  image: python:3.11-alpine
+  before_script:
+    - apk add --no-cache gcc musl-dev postgresql-dev
+    - pip install --upgrade pip
+    - pip install -r requirements.txt
+  script:
+    - cd app
+    - python manage.py check
+  rules:
+    - if: '$CI_COMMIT_BRANCH'
+
+django_tests:
+  stage: test
+  image: python:3.11-alpine
+  services:
+    - name: postgres:15-alpine
+      alias: postgres
+  before_script:
+    - apk add --no-cache gcc musl-dev postgresql-dev
+    - pip install --upgrade pip
+    - pip install -r requirements.txt
+  script:
+    - cd app
+    - python manage.py migrate --noinput
+    - python manage.py test --noinput
+  rules:
+    - if: '$CI_COMMIT_BRANCH'
+
+docker_build:
+  stage: build
+  image: docker:27
+  services:
+    - name: docker:27-dind
+      command: ["--tls=false"]
+  variables:
+    DOCKER_HOST: "tcp://docker:2375"
+    DOCKER_TLS_CERTDIR: ""
+  before_script:
+    - docker version
+  script:
+    - docker build -t "$CI_REGISTRY_IMAGE/mock-django:$CI_COMMIT_SHORT_SHA" .
+    - |
+      if [ -n "$CI_REGISTRY" ]; then
+        echo "$CI_REGISTRY_PASSWORD" | docker login "$CI_REGISTRY" -u "$CI_REGISTRY_USER" --password-stdin
+        docker push "$CI_REGISTRY_IMAGE/mock-django:$CI_COMMIT_SHORT_SHA"
+      fi
+  rules:
+    - if: '$CI_COMMIT_BRANCH'
+
+deploy_staging:
+  stage: deploy
+  image: alpine:3.20
+  before_script:
+    - apk add --no-cache openssh-client bash
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - printf "%s" "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - printf "%s
+" "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+  script:
+    - >
+      ssh "$DEPLOY_USER@$DEPLOY_HOST"
+      "cd '$DEPLOY_PATH'
+      && git fetch --all
+      && git checkout '$CI_COMMIT_SHA'
+      && chmod +x deploy/scripts/*.sh
+      && ./deploy/scripts/deploy.sh"
+  environment:
+    name: staging
+    url: $STAGING_URL
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      when: manual
+
+deploy_production:
+  stage: deploy
+  image: alpine:3.20
+  before_script:
+    - apk add --no-cache openssh-client bash
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - printf "%s" "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - printf "%s
+" "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+  script:
+    - >
+      ssh "$DEPLOY_USER@$DEPLOY_HOST"
+      "cd '$DEPLOY_PATH'
+      && git fetch --all
+      && git checkout '$CI_COMMIT_SHA'
+      && chmod +x deploy/scripts/*.sh
+      && ./deploy/scripts/backup-db.sh
+      && ./deploy/scripts/deploy.sh"
+  environment:
+    name: production
+    url: $PRODUCTION_URL
+  rules:
+    - if: '$CI_COMMIT_TAG'
+      when: manual
