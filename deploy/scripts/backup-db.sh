@@ -19,6 +19,7 @@ mkdir -p "$BACKUP_DIR"
 BACKUP_FILE="$BACKUP_DIR/${POSTGRES_DB:-mockdb}_${TIMESTAMP}.sql"
 
 echo "==> Creating PostgreSQL backup: $BACKUP_FILE"
-docker compose -f "$COMPOSE_FILE" exec -T db   pg_dump -U "${POSTGRES_USER:-mockuser}" "${POSTGRES_DB:-mockdb}" > "$BACKUP_FILE"
+docker compose -f "$COMPOSE_FILE" exec -T db \
+  pg_dump -U "${POSTGRES_USER:-mockuser}" "${POSTGRES_DB:-mockdb}" > "$BACKUP_FILE"
 
 echo "==> Backup completed: $BACKUP_FILE"

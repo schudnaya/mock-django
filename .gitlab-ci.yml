@@ -82,8 +82,7 @@ deploy_staging:
     - chmod 700 ~/.ssh
     - printf "%s" "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
     - chmod 600 ~/.ssh/id_rsa
-    - printf "%s
-" "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+    - printf "%s\n" "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
   script:
     - >
       ssh "$DEPLOY_USER@$DEPLOY_HOST"
@@ -108,8 +107,7 @@ deploy_production:
     - chmod 700 ~/.ssh
     - printf "%s" "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
     - chmod 600 ~/.ssh/id_rsa
-    - printf "%s
-" "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+    - printf "%s\n" "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
   script:
     - >
       ssh "$DEPLOY_USER@$DEPLOY_HOST"

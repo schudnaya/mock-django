@@ -19,10 +19,13 @@
 3. На сервере развертывания создать `.env` на основе `.env.example`.
 4. В GitLab CI/CD настроить защищенные переменные из `docs/deployment/gitlab-ci-variables.md`.
 5. Проверить локальный запуск:
+
    ```bash
    docker compose -f deploy/docker-compose.prod.yml up -d --build
    ```
+
 6. Проверить endpoint работоспособности:
+
    ```bash
    curl -f http://localhost/health/ || curl -f http://localhost:8080/health/
    ```

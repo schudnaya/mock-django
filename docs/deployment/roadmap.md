@@ -55,10 +55,13 @@
    - параметры PostgreSQL.
 2. Проверить работу `python manage.py check`.
 3. Проверить миграции:
+
    ```bash
    python manage.py migrate --noinput
    ```
+
 4. Проверить healthcheck:
+
    ```bash
    curl -f http://localhost/health/
    ```
@@ -94,11 +97,14 @@
 2. Клонировать репозиторий.
 3. Создать `.env` на основе `.env.example`.
 4. Выполнить:
+
    ```bash
    chmod +x deploy/scripts/*.sh
    ./deploy/scripts/deploy.sh
    ```
+
 5. Проверить:
+
    ```bash
    docker compose -f deploy/docker-compose.prod.yml ps
    curl -f http://localhost/health/
@@ -115,6 +121,7 @@
 3. Проверить резервную копию БД.
 4. Проверить инструкцию отката.
 5. Оформить релиз тегом:
+
    ```bash
    git tag v1.0.0
    git push origin v1.0.0
